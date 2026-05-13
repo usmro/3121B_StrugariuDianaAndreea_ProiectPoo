@@ -38,6 +38,12 @@ public:
     void adaugaSala(Sala s) override { sali.push_back(s); }
     const std::vector<Film>& getToateFilmele() const { return filme; }
 
+    // NOU: Pentru a putea selecta sala din main
+    Sala* getSalaById(int id) {
+        for (auto& s : sali) if (s.getId() == id) return &s;
+        return nullptr;
+    }
+
     void incarcaFilmeDinFisier(std::string numeFisier) {
         std::ifstream fisier(numeFisier);
         if (!fisier.is_open()) return;
@@ -73,26 +79,40 @@ public:
         }
     }
 
+    // Cerinta A: Salvarea in fisier text
+    void salveazaRezervareInFisier(std::string titlu, std::string sala, int r, int l, double pret, std::string email) {
+        std::ofstream f("toate_rezervarile.txt", std::ios::app);
+        if (f.is_open()) {
+            f << "Film: " << titlu << " | Sala: " << sala << " | Loc: R" << r << " L" << l
+                << " | Pret: " << pret << " RON | Client: " << (email.empty() ? "Offline" : email) << "\n";
+            f.close();
+        }
+    }
+
     void realizeazaRezervare(int idSala, int r, int l, std::string titluFilm, std::string email) override {
+        // Logica este apelata acum dupa calculul de pret din main
+    }
+
+    // Versiune extinsa pentru cerintele noi
+    void proceseazaRezervareCompleta(int idSala, int r, int l, Film* film, std::string email, double multiplicator) {
         try {
-            Film* filmGasit = nullptr;
-            for (auto& f : filme) {
-                if (f.getTitlu() == titluFilm) filmGasit = &f;
-            }
-            if (!filmGasit) throw std::runtime_error("Filmul nu exista!");
-            for (auto& s : sali) {
-                if (s.getId() == idSala) {
-                    s.ocupaLoc(r, l);
-                    double pret = filmGasit->getPretBaza() + (filmGasit->getEste3D() ? 10.0 : 0.0);
-                    Rezervare* rez;
-                    if (!email.empty()) rez = new RezervareOnline(*filmGasit, r, l, pret, email);
-                    else rez = new Rezervare(*filmGasit, r, l, pret);
-                    istoriculRezervarilor.push_back(rez);
-                    std::cout << "\nREZERVARE REUSITA!\n";
-                    rez->afiseazaDetalii();
-                    return;
-                }
-            }
+            Sala* s = getSalaById(idSala);
+            if (!s) return;
+
+            s->ocupaLoc(r, l);
+            double pretFinal = (film->getPretBaza() + (film->getEste3D() ? 10.0 : 0.0)) * multiplicator;
+
+            Rezervare* rez;
+            if (!email.empty()) rez = new RezervareOnline(*film, r, l, pretFinal, email);
+            else rez = new Rezervare(*film, r, l, pretFinal);
+
+            istoriculRezervarilor.push_back(rez);
+
+            // Salvare (Cerinta A)
+            salveazaRezervareInFisier(film->getTitlu(), s->getNume(), r + 1, l + 1, pretFinal, email);
+
+            std::cout << "\nREZERVARE REUSITA!\n";
+            rez->afiseazaDetalii();
         }
         catch (const std::exception& e) {
             std::cerr << "\nEROARE: " << e.what() << "\n";
@@ -104,6 +124,7 @@ public:
     }
 };
 
+// Functiile tale de cautare live raman neschimbate
 bool contineSubsir(std::string text, std::string cautare) {
     if (cautare.empty()) return true;
     std::transform(text.begin(), text.end(), text.begin(), ::tolower);
@@ -186,33 +207,38 @@ int meniuInteractiv(std::vector<std::string> optiuni, std::string titlu) {
 int main() {
     Cinematograf cinema;
     cinema.incarcaFilmeDinFisier("filme.txt");
-    cinema.adaugaSala(Sala(1, 5, 10));
 
-    std::vector<std::string> optiuniMeniu = { "Rezervare Noua", "Vezi Harta Sala", "Iesire" };
+    // Cerinta B: Adaugam sali multiple cu configuratii diferite
+    cinema.adaugaSala(Sala(1, "SALA 2D STANDARD", 5, 10));
+    cinema.adaugaSala(Sala(2, "SALA VIP - DOLBY", 3, 6));
+
+    std::vector<std::string> optiuniMeniu = { "Rezervare Noua", "Vezi Harta Sali", "Iesire" };
 
     while (true) {
         int alegere = meniuInteractiv(optiuniMeniu, "SISTEM REZERVARI CINEMA");
         if (alegere == 0) {
             Film* f = meniuCautareLive(cinema);
             if (f) {
+                // Cerinta B: Alegere Sala
+                int idSalaAleasa = meniuInteractiv({ "Sala 1 (Standard)", "Sala 2 (VIP)" }, "ALEGE SALA") + 1;
+                Sala* sPtr = cinema.getSalaById(idSalaAleasa);
+
+                // Cerinta C: Alegere Categorie (Multiplicator pret)
+                int cat = meniuInteractiv({ "Adult (Pret Intreg)", "Student (-25%)", "Pensionar (-50%)" }, "CATEGORIE CLIENT");
+                double mult = (cat == 1) ? 0.75 : (cat == 2 ? 0.5 : 1.0);
+
                 int r = -1, l = -1;
                 while (true) {
                     system(CLEAR);
-                    std::cout << "Film selectat: " << f->getTitlu() << "\n\n";
-                    cinema.afiseazaLocuri(1);
-                    std::cout << "\nIntroduceti randul (1-5): ";
-                    if (!(std::cin >> r) || r < 1 || r > 5) {
-                        std::cout << "\nEROARE: Rand invalid! Apasati ENTER pentru a reincerca...";
-                        std::cin.clear();
-                        std::cin.ignore(1000, '\n');
-                        _getch(); continue;
+                    std::cout << "Film: " << f->getTitlu() << " | Sala: " << sPtr->getNume() << "\n\n";
+                    cinema.afiseazaLocuri(idSalaAleasa);
+                    std::cout << "\nRand (1-" << sPtr->getRanduri() << "): ";
+                    if (!(std::cin >> r) || r < 1 || r > sPtr->getRanduri()) {
+                        std::cout << "\nEROARE: Rand invalid!"; std::cin.clear(); std::cin.ignore(1000, '\n'); _getch(); continue;
                     }
-                    std::cout << "Introduceti locul (1-10): ";
-                    if (!(std::cin >> l) || l < 1 || l > 10) {
-                        std::cout << "\nEROARE: Loc invalid! Apasati ENTER pentru a reincerca...";
-                        std::cin.clear();
-                        std::cin.ignore(1000, '\n');
-                        _getch(); continue;
+                    std::cout << "Loc (1-" << sPtr->getColoane() << "): ";
+                    if (!(std::cin >> l) || l < 1 || l > sPtr->getColoane()) {
+                        std::cout << "\nEROARE: Loc invalid!"; std::cin.clear(); std::cin.ignore(1000, '\n'); _getch(); continue;
                     }
                     break;
                 }
@@ -220,14 +246,18 @@ int main() {
                 std::cout << "Email (Enter pentru skip): ";
                 std::cin.ignore();
                 std::getline(std::cin, email);
-                cinema.realizeazaRezervare(1, r - 1, l - 1, f->getTitlu(), email);
+
+                // Procesare cu noile date
+                cinema.proceseazaRezervareCompleta(idSalaAleasa, r - 1, l - 1, f, email, mult);
+
                 std::cout << "\nApasati orice tasta pentru a continua...";
                 _getch();
             }
         }
         else if (alegere == 1) {
+            int idS = meniuInteractiv({ "Harta Sala 1", "Harta Sala 2" }, "SELECTEAZA SALA PENTRU VIZUALIZARE") + 1;
             system(CLEAR);
-            cinema.afiseazaLocuri(1);
+            cinema.afiseazaLocuri(idS);
             std::cout << "\nApasati orice tasta pentru a continua...";
             _getch();
         }

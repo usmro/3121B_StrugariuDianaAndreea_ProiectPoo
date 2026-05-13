@@ -6,6 +6,7 @@
 #include <string>
 #include <iomanip>
 #include <stdexcept>
+#include <fstream> // NOU: Necesar pentru salvarea rezervarilor
 
 class Film {
 private:
@@ -22,16 +23,21 @@ public:
 class Sala {
 private:
     int id;
+    std::string nume; // NOU: Pentru a identifica salile (Cerinta B)
     int randuri;
     int coloane;
     std::vector<std::vector<int>> locuri;
 
 public:
-    Sala(int _id, int _r, int _c) : id(_id), randuri(_r), coloane(_c) {
+    // Constructor actualizat sa primeasca si numele
+    Sala(int _id, std::string _nume, int _r, int _c) : id(_id), nume(_nume), randuri(_r), coloane(_c) {
         locuri.resize(randuri, std::vector<int>(coloane, 0));
     }
 
     int getId() const { return id; }
+    std::string getNume() const { return nume; } // NOU
+    int getRanduri() const { return randuri; }
+    int getColoane() const { return coloane; }
 
     void ocupaLoc(int r, int l) {
         if (r >= 0 && r < randuri && l >= 0 && l < coloane) {
@@ -44,29 +50,21 @@ public:
     }
 
     void afiseazaHarta() const {
-        std::cout << "\n      ========= ECRAN =========\n\n";
-
-        // Numerotare coloane
+        std::cout << "\n      ========= " << nume << " =========\n\n"; // Afisare nume sala
         std::cout << "      ";
-        for (int j = 1; j <= coloane; ++j) {
-            std::cout << std::setw(3) << j;
-        }
+        for (int j = 1; j <= coloane; ++j) std::cout << std::setw(3) << j;
         std::cout << "\n      ";
         for (int j = 0; j < coloane * 3; ++j) std::cout << "-";
         std::cout << "\n";
 
-        // Afisare randuri
         for (int i = 0; i < randuri; ++i) {
             std::cout << "R" << std::setw(2) << i + 1 << " |";
             for (int j = 0; j < coloane; ++j) {
-                if (locuri[i][j] == 0)
-                    std::cout << std::setw(3) << "O";
-                else
-                    std::cout << std::setw(3) << "X";
+                if (locuri[i][j] == 0) std::cout << std::setw(3) << "O";
+                else std::cout << std::setw(3) << "X";
             }
             std::cout << " |\n";
         }
-
         std::cout << "      ";
         for (int j = 0; j < coloane * 3; ++j) std::cout << "-";
         std::cout << "\n      (O = Liber, X = Ocupat)\n";
