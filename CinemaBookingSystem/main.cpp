@@ -489,10 +489,231 @@ bool menuAutentificare(Cinematograf& cinema) {
 }
 
 // ============================================================
+//  BROWSE DUPA GEN  (stil Netflix: randuri per gen)
+// ============================================================
+
+// Returneaza genurile unice sortate alfabetic din lista de filme
+std::vector<std::string> colecteazaGenuri(const std::vector<Film>& filme) {
+    std::vector<std::string> genuri;
+    for (auto& f : filme) {
+        if (f.getGen().empty() || f.getGen() == "Necunoscut") continue;
+        if (std::find(genuri.begin(), genuri.end(), f.getGen()) == genuri.end())
+            genuri.push_back(f.getGen());
+    }
+    std::sort(genuri.begin(), genuri.end());
+    return genuri;
+}
+
+// Afiseaza un rand de filme pentru un gen (max 5 vizibile, scroll stanga-dreapta)
+// Returneaza filmul selectat sau nullptr
+Film* randGen(const std::string& gen, std::vector<Film*>& filme, int& offset, int& idxLocal) {
+    const int VIZIBILE = 5;
+    system(CLEAR);
+
+    // Header stil Netflix
+    std::cout << "\n";
+    std::cout << "  +----------------------------------------------------------+\n";
+    std::cout << "  |  BROWSE FILME  -  " << std::left << std::setw(41) << gen << "|\n";
+    std::cout << "  +----------------------------------------------------------+\n\n";
+    std::cout << "  Sageti Stanga/Dreapta = naviga  |  Sus/Jos = schimba gen  |  Enter = selecteaza  |  ESC = inapoi\n\n";
+
+    // Afiseaza genurile (bara de sus)
+    // (apelantul redeseneaza tot ecranul, asa ca bara e in apelant)
+
+    if (filme.empty()) {
+        std::cout << "  (niciun film in acest gen)\n";
+        return nullptr;
+    }
+
+    // Asigura offset valid
+    if (offset + idxLocal >= (int)filme.size()) {
+        offset = 0; idxLocal = 0;
+    }
+
+    int total = (int)filme.size();
+    int afisate = std::min(VIZIBILE, total - offset);
+
+    // Titluri trunchiate la 18 caractere
+    auto trunc = [](const std::string& s, int n) -> std::string {
+        if ((int)s.size() <= n) return s + std::string(n - s.size(), ' ');
+        return s.substr(0, n - 2) + "..";
+        };
+
+    // Rand superior: titluri
+    std::cout << "  ";
+    for (int i = 0; i < afisate; ++i) {
+        int fi = offset + i;
+        std::string tit = trunc(filme[fi]->getTitlu(), 18);
+        if (i == idxLocal)
+            std::cout << "[" << tit << "] ";
+        else
+            std::cout << " " << tit << "  ";
+    }
+    std::cout << "\n\n";
+
+    // Detalii film selectat
+    Film* sel = filme[offset + idxLocal];
+    std::cout << "  +---------------------------------------+\n";
+    std::cout << "  | " << std::left << std::setw(35) << sel->getTitlu().substr(0, 35) << " |\n";
+    std::cout << "  | Gen:    " << std::left << std::setw(27) << sel->getGen() << " |\n";
+    std::cout << "  | Durata: " << std::left << std::setw(4) << sel->getDurata() << " min"
+        << std::string(23, ' ') << "|\n";
+    std::cout << "  | Format: " << std::left << std::setw(27) << (sel->getEste3D() ? "3D" : "2D") << " |\n";
+    std::cout << "  | Pret:   " << std::left << std::setw(7)
+        << (std::to_string((int)sel->getPretBaza()) + " RON")
+        << (sel->getEste3D() ? " (+ 10 RON 3D)" : "             ") << " |\n";
+    std::cout << "  +---------------------------------------+\n";
+
+    // Navigator pozitie
+    std::cout << "\n  Film " << (offset + idxLocal + 1) << "/" << total;
+    if (offset > 0) std::cout << "  [< mai multe]";
+    if (offset + afisate < total) std::cout << "  [mai multe >]";
+    std::cout << "\n";
+
+    return nullptr; // nu returnam film pana nu apasa Enter
+}
+
+Film* meniuBrowseGenuri(Cinematograf& cinema) {
+    std::vector<std::string> genuri = colecteazaGenuri(cinema.getFilme());
+    if (genuri.empty()) return nullptr;
+
+    int genIdx = 0;   // gen curent selectat
+    std::map<std::string, int> offsetGen, idxGen; // scroll state per gen
+    for (auto& g : genuri) { offsetGen[g] = 0; idxGen[g] = 0; }
+
+    const int VIZIBILE = 5;
+
+    while (true) {
+        std::string& genCurent = genuri[genIdx];
+
+        // Colecteaza filme pentru genul curent
+        std::vector<Film*> filmeGen;
+        for (auto& f : cinema.getFilme())
+            if (f.getGen() == genCurent)
+                filmeGen.push_back(const_cast<Film*>(&f));
+
+        system(CLEAR);
+
+        // Header
+        std::cout << "\n";
+        std::cout << "  +----------------------------------------------------------+\n";
+        std::cout << "  |            BROWSE DUPA GEN  -  CINEMA                   |\n";
+        std::cout << "  +----------------------------------------------------------+\n\n";
+
+        // Bara genuri (orizontala, gen curent evidentiat)
+        std::cout << "  ";
+        for (int i = 0; i < (int)genuri.size(); ++i) {
+            if (i == genIdx)
+                std::cout << "[" << genuri[i] << "] ";
+            else
+                std::cout << " " << genuri[i] << "  ";
+        }
+        std::cout << "\n";
+        std::cout << "  " << std::string(60, '-') << "\n\n";
+
+        // Rand filme
+        int& off = offsetGen[genCurent];
+        int& iLoc = idxGen[genCurent];
+        int total = (int)filmeGen.size();
+
+        if (total == 0) {
+            std::cout << "  (niciun film)\n";
+        }
+        else {
+            if (iLoc >= total) iLoc = total - 1;
+            int afisate = std::min(VIZIBILE, total - off);
+
+            auto trunc = [](const std::string& s, int n) -> std::string {
+                if ((int)s.size() <= n) return s + std::string(n - s.size(), ' ');
+                return s.substr(0, n - 2) + "..";
+                };
+
+            std::cout << "  ";
+            if (off > 0) std::cout << "< ";
+            else         std::cout << "  ";
+
+            for (int i = 0; i < afisate; ++i) {
+                std::string tit = trunc(filmeGen[off + i]->getTitlu(), 16);
+                if (i == iLoc)
+                    std::cout << "[" << tit << "] ";
+                else
+                    std::cout << " " << tit << "  ";
+            }
+
+            if (off + afisate < total) std::cout << " >";
+            std::cout << "\n\n";
+
+            // Detalii film selectat
+            Film* sel = filmeGen[off + iLoc];
+            std::string pretStr = std::to_string((int)sel->getPretBaza()) + " RON"
+                + (sel->getEste3D() ? " + 10 RON (3D)" : "");
+            std::cout << "  +------------------------------------------+\n";
+            std::cout << "  | " << std::left << std::setw(40) << sel->getTitlu().substr(0, 40) << " |\n";
+            std::cout << "  | Gen:    " << std::left << std::setw(32) << sel->getGen() << " |\n";
+            std::cout << "  | Durata: " << std::left << std::setw(32)
+                << (std::to_string(sel->getDurata()) + " min") << " |\n";
+            std::cout << "  | Format: " << std::left << std::setw(32)
+                << (sel->getEste3D() ? "3D" : "2D") << " |\n";
+            std::cout << "  | Pret:   " << std::left << std::setw(32) << pretStr << " |\n";
+            std::cout << "  +------------------------------------------+\n";
+            std::cout << "\n  Film " << (off + iLoc + 1) << " / " << total << "\n";
+        }
+
+        std::cout << "\n  Sus/Jos = gen  |  St/Dr = film  |  Enter = rezerva  |  ESC = inapoi\n";
+
+        int ch = 0; Tasta t = citesteInput(ch);
+
+        if (t == T_ESC) return nullptr;
+
+        // Navigare genuri (sus/jos)
+        if (t == T_SUS) {
+            genIdx = (genIdx > 0) ? genIdx - 1 : (int)genuri.size() - 1;
+        }
+        else if (t == T_JOS) {
+            genIdx = (genIdx + 1) % (int)genuri.size();
+        }
+
+        // Navigare filme in gen (stanga/dreapta)
+        else if (t == T_STANGA && total > 0) {
+            if (iLoc > 0) {
+                --iLoc;
+            }
+            else if (off > 0) {
+                --off; iLoc = 0;
+            }
+        }
+        else if (t == T_DREAPTA && total > 0) {
+            if (iLoc < std::min(VIZIBILE, total - off) - 1) {
+                ++iLoc;
+            }
+            else if (off + VIZIBILE < total) {
+                ++off; iLoc = VIZIBILE - 1;
+            }
+        }
+
+        // Selectie film
+        else if (t == T_ENTER && total > 0) {
+            return filmeGen[off + iLoc];
+        }
+    }
+}
+
+// ============================================================
 //  FLUX: REZERVARE NOUA
 // ============================================================
 void fluxRezervareNoua(Cinematograf& cinema) {
-    Film* f = meniuCautareLive(cinema);
+    // Alegere metoda cautare: live sau browse gen
+    int mod = meniuInteractiv(
+        { "Cauta dupa titlu", "Browse dupa gen (stil Netflix)" },
+        "ALEGE FILM - METODA CAUTARE"
+    );
+    if (mod == -1) return;
+
+    Film* f = nullptr;
+    if (mod == 0)
+        f = meniuCautareLive(cinema);
+    else
+        f = meniuBrowseGenuri(cinema);
     if (!f) return;
 
     // Alege sala
@@ -711,6 +932,7 @@ int main() {
 
         std::vector<std::string> optMain = {
             "Rezervare Noua",
+            "Browse dupa gen",
             "Harta Sala",
             "Anulare Rezervare",
             "Profilul Meu"
@@ -735,6 +957,70 @@ int main() {
             fluxRezervareNoua(cinema);
         }
         else if (al == 1) {
+            // Browse dupa gen - direct, fara rezervare
+            Film* f = meniuBrowseGenuri(cinema);
+            if (f) {
+                // Ofera optiunea de a rezerva filmul selectat
+                int confirm = meniuInteractiv(
+                    { "Da, rezerva acest film", "Nu, inapoi la meniu" },
+                    "AI SELECTAT: " + f->getTitlu()
+                );
+                if (confirm == 0) {
+                    // Continua direct cu fluxul de rezervare pentru filmul ales
+                    // Alege sala
+                    std::vector<std::string> optSali;
+                    for (auto& s : cinema.getSali())
+                        optSali.push_back(s.getNume() + " (" + std::to_string(s.getRanduri())
+                            + "x" + std::to_string(s.getColoane()) + ")");
+                    int idxS = meniuInteractiv(optSali, "ALEGE SALA");
+                    if (idxS != -1) {
+                        int idSala = cinema.getSali()[idxS].getId();
+                        int idxO = meniuInteractiv(
+                            std::vector<std::string>(cinema.getOre().begin(), cinema.getOre().end()),
+                            "ALEGE ORA"
+                        );
+                        if (idxO != -1) {
+                            std::string ora = cinema.getOre()[idxO];
+                            system(CLEAR);
+                            Sala* sala = cinema.getSalaById(idSala);
+                            sala->afiseazaHarta(ora);
+                            std::cout << "  Film: " << f->getTitlu()
+                                << (f->getEste3D() ? " [3D]" : "") << "\n"
+                                << "  Pret baza: " << f->getPretBaza()
+                                << (f->getEste3D() ? " + 10 RON (3D)" : "") << " RON"
+                                << "  (VIP x1.5 | Cuplu x1.8)\n\n";
+                            std::string srIn = citesteString("  Rand (1-" + std::to_string(sala->getRanduri()) + "): ");
+                            std::string slIn = citesteString("  Loc  (1-" + std::to_string(sala->getColoane()) + "): ");
+                            int r = 0, l = 0;
+                            try { r = std::stoi(srIn); l = std::stoi(slIn); }
+                            catch (...) {}
+                            if (r<1 || r>sala->getRanduri() || l<1 || l>sala->getColoane()) {
+                                std::cout << "\n  [!] Rand sau loc invalid!\n"; asteptaTasta();
+                            }
+                            else if (sala->esteLocOcupat(ora, r - 1, l - 1)) {
+                                std::cout << "\n  [!] Loc ocupat!\n"; asteptaTasta();
+                            }
+                            else {
+                                CategorieLocSeat cat = sala->getCategorieLocSeat(r - 1, l - 1);
+                                double pretFinal = (f->getPretBaza() + (f->getEste3D() ? 10.0 : 0.0)) * multiplicatorCategorie(cat);
+                                std::cout << "\n  Categorie: " << numeCategorie(cat)
+                                    << " | Pret final: " << std::fixed << std::setprecision(2) << pretFinal << " RON\n";
+                                std::string conf2 = citesteString("  Confirmi? (d/n): ");
+                                if (conf2 == "d" || conf2 == "D") {
+                                    std::string email = citesteString("  Email (optional): ");
+                                    while (!email.empty() && (email.front() == ' ' || email.front() == '\r')) email.erase(email.begin());
+                                    while (!email.empty() && (email.back() == ' ' || email.back() == '\r'))   email.pop_back();
+                                    cinema.proceseazaRezervare(idSala, r - 1, l - 1, f, ora, email);
+                                    std::cout << "  [OK] Rezervare confirmata!\n";
+                                    asteptaTasta();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else if (al == 2) {
             // Harta sala
             std::vector<std::string> optSali;
             for (auto& s : cinema.getSali())
@@ -752,7 +1038,7 @@ int main() {
             cinema.getSalaById(idSala)->afiseazaHarta(cinema.getOre()[idxO]);
             asteptaTasta();
         }
-        else if (al == 2) {
+        else if (al == 3) {
             // Anulare
             std::vector<std::string> optSali;
             for (auto& s : cinema.getSali()) optSali.push_back(s.getNume());
@@ -777,11 +1063,11 @@ int main() {
             cinema.anuleazaRezervare(idSala, ora, r - 1, l - 1);
             asteptaTasta();
         }
-        else if (al == 3) {
+        else if (al == 4) {
             // Profil
             meniuProfil(cinema);
         }
-        else if (al == 4 && eAdmin) {
+        else if (al == 5 && eAdmin) {
             // Admin panel
             meniuAdmin(cinema);
         }
