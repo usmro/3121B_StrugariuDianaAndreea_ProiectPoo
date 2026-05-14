@@ -10,3 +10,10 @@ Release/
 *.log
 *.tlog
 *.lastbuildstate
+cinema
+cinema_test
+*.exe
+*.o
+*.suo
+Bilet_*.txt
+conturi.txt

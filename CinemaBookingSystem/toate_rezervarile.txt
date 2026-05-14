@@ -1,1 +1,7 @@
 Film: Amadeus | Sala: SALA VIP - DOLBY | Loc: R2 L6 | Pret: 11 RON | Client: Offline
+Film: The Shawshank Redemption | Sala: SALA 2D STANDARD | Loc: R2 L3 | Pret: 25 RON | Client: Offline
+Film: The Shawshank Redemption | Sala: SALA 2D STANDARD | Loc: R5 L2 | Pret: 18.75 RON | Client: Offline
+Film: The Lord of the Rings: The Return of the King | Sala: SALA VIP - DOLBY | Loc: R2 L3 | Pret: 37.5 RON | Client: Offline
+Film: The Lord of the Rings: The Two Towers | Sala: SALA VIP - DOLBY | Loc: R2 L4 | Pret: 36 RON | Client: Offline
+Film: The Shawshank Redemption | Sala: SALA 2 VIP | Ora: 12:00 | Loc: R2 L3 | Pret: 25 RON | Client: Offline
+Film: The Shawshank Redemption | Sala: SALA 1 STANDARD | Ora: 11:00 | Loc: R1 L5 [CUPLU] | Pret: 45.00 RON | Client: Diana
