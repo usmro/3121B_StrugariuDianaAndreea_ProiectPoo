@@ -18,6 +18,15 @@
     <ClInclude Include="CinemaModels.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Cinema.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Platform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
