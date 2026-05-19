@@ -87,25 +87,59 @@ private:
     std::string gen;
     int         durata;
     StatusFilm  status;
+    double      rating       = 0.0;
+    std::string descriere;
+    std::string regizor;
+    std::string distributie;
+    std::string dataPremiera;
+    std::string tara;
+    std::string limba        = "EN";
+    std::string clasificare  = "AG";
+    std::string posterPath;
 public:
     Film(std::string t, bool e3d, double p,
-         std::string g="General", int d=0,
-         StatusFilm s=StatusFilm::RULAZA_ACUM)
-        : titlu(t), este3D(e3d), pretBaza(p), gen(g), durata(d), status(s) {}
+         std::string g    = "General", int d = 0,
+         StatusFilm  s    = StatusFilm::RULAZA_ACUM,
+         double      rat  = 0.0,
+         std::string desc = "", std::string reg  = "",
+         std::string dist = "", std::string datP = "",
+         std::string tar  = "", std::string lim  = "EN",
+         std::string clas = "AG", std::string post = "")
+        : titlu(t), este3D(e3d), pretBaza(p), gen(g), durata(d), status(s),
+          rating(rat), descriere(desc), regizor(reg), distributie(dist),
+          dataPremiera(datP), tara(tar), limba(lim), clasificare(clas), posterPath(post) {}
 
-    std::string getTitlu()    const { return titlu; }
-    bool        getEste3D()   const { return este3D; }
-    double      getPretBaza() const { return pretBaza; }
-    std::string getGen()      const { return gen; }
-    int         getDurata()   const { return durata; }
-    StatusFilm  getStatus()   const { return status; }
+    std::string getTitlu()        const { return titlu; }
+    bool        getEste3D()       const { return este3D; }
+    double      getPretBaza()     const { return pretBaza; }
+    std::string getGen()          const { return gen; }
+    int         getDurata()       const { return durata; }
+    StatusFilm  getStatus()       const { return status; }
+    double      getRating()       const { return rating; }
+    std::string getDescriere()    const { return descriere; }
+    std::string getRegizor()      const { return regizor; }
+    std::string getDistributie()  const { return distributie; }
+    std::string getDataPremiera() const { return dataPremiera; }
+    std::string getTara()         const { return tara; }
+    std::string getLimba()        const { return limba; }
+    std::string getClasificare()  const { return clasificare; }
+    std::string getPosterPath()   const { return posterPath; }
 
-    void setTitlu(const std::string& t)  { titlu=t; }
-    void setEste3D(bool v)               { este3D=v; }
-    void setPretBaza(double p)           { pretBaza=p; }
-    void setGen(const std::string& g)    { gen=g; }
-    void setDurata(int d)                { durata=d; }
-    void setStatus(StatusFilm s)         { status=s; }
+    void setTitlu(const std::string& t)        { titlu=t; }
+    void setEste3D(bool v)                     { este3D=v; }
+    void setPretBaza(double p)                 { pretBaza=p; }
+    void setGen(const std::string& g)          { gen=g; }
+    void setDurata(int d)                      { durata=d; }
+    void setStatus(StatusFilm s)               { status=s; }
+    void setRating(double r)                   { rating=r; }
+    void setDescriere(const std::string& d)    { descriere=d; }
+    void setRegizor(const std::string& r)      { regizor=r; }
+    void setDistributie(const std::string& d)  { distributie=d; }
+    void setDataPremiera(const std::string& d) { dataPremiera=d; }
+    void setTara(const std::string& t)         { tara=t; }
+    void setLimba(const std::string& l)        { limba=l; }
+    void setClasificare(const std::string& c)  { clasificare=c; }
+    void setPosterPath(const std::string& p)   { posterPath=p; }
 };
 
 

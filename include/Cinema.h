@@ -16,7 +16,7 @@ private:
 
     
     void salveazaConturi() {
-        std::ofstream f("conturi.txt", std::ios::trunc);
+        std::ofstream f("data/conturi.txt", std::ios::trunc);
         for (auto& u : utilizatori)
             f << u.username << "," << u.parola << "," << (u.esteAdmin?1:0) << "\n";
     }
@@ -28,7 +28,7 @@ private:
 
     
     std::string fisierIstoric(const std::string& usr) {
-        return "istoric_" + usr + ".txt";
+        return "data/istoric_" + usr + ".txt";
     }
 
     void salveazaIstoricUser(const ContUtilizator& u) {
@@ -81,34 +81,52 @@ public:
         std::string ln;
         while (std::getline(f,ln)) {
             if (!ln.empty()&&ln.back()=='\r') ln.pop_back();
-            std::stringstream ss(ln);
-            std::string titlu,s3d,spret,gen,sdur,sstat;
-            if (!std::getline(ss,titlu,',')) continue;
-            if (!std::getline(ss,s3d,','))   continue;
-            if (!std::getline(ss,spret,',')) continue;
-            std::string g="General",sd="0",ss2="0";
-            std::getline(ss,g,',');
-            std::getline(ss,sd,',');
-            std::getline(ss,ss2,',');
-            try {
-                StatusFilm st = (ss2=="1") ? StatusFilm::IN_CURAND : StatusFilm::RULAZA_ACUM;
-                filme.push_back(Film(titlu,s3d=="1",std::stod(spret),g,std::stoi(sd),st));
-            } catch(...) {}
+            if (ln.empty()) continue;
+            if (ln.find('|') != std::string::npos) {
+                std::vector<std::string> p;
+                std::stringstream ss(ln); std::string tok;
+                while (std::getline(ss,tok,'|')) p.push_back(tok);
+                if (p.size()<6) continue;
+                auto gf=[&](int i)->std::string{return i<(int)p.size()?p[i]:"";};
+                try {
+                    StatusFilm st=gf(5)=="1"?StatusFilm::IN_CURAND:StatusFilm::RULAZA_ACUM;
+                    double rat=0.0; try{rat=std::stod(gf(6));}catch(...){}
+                    filme.push_back(Film(gf(0),gf(1)=="1",std::stod(gf(2)),
+                        gf(3),std::stoi(gf(4)),st,
+                        rat,gf(7),gf(8),gf(9),gf(10),gf(11),gf(12),gf(13),gf(14)));
+                } catch(...) {}
+            } else {
+                std::stringstream ss(ln);
+                std::string titlu,s3d,spret,g="General",sd="0",ss2="0";
+                if (!std::getline(ss,titlu,',')) continue;
+                if (!std::getline(ss,s3d,  ',')) continue;
+                if (!std::getline(ss,spret,',')) continue;
+                std::getline(ss,g,','); std::getline(ss,sd,','); std::getline(ss,ss2,',');
+                try {
+                    StatusFilm st=ss2=="1"?StatusFilm::IN_CURAND:StatusFilm::RULAZA_ACUM;
+                    filme.push_back(Film(titlu,s3d=="1",std::stod(spret),g,std::stoi(sd),st));
+                } catch(...) {}
+            }
         }
     }
 
     void salveazaFilme() {
-        std::ofstream f("filme.txt", std::ios::trunc);
+        std::ofstream f("data/filme.txt", std::ios::trunc);
         for (auto& fm : filme)
-            f << fm.getTitlu() << "," << (fm.getEste3D()?1:0) << ","
-              << std::fixed << std::setprecision(2) << fm.getPretBaza() << ","
-              << fm.getGen() << "," << fm.getDurata() << ","
-              << (fm.getStatus()==StatusFilm::IN_CURAND?1:0) << "\n";
+            f << fm.getTitlu()       << "|" << (fm.getEste3D()?1:0)    << "|"
+              << std::fixed << std::setprecision(2) << fm.getPretBaza() << "|"
+              << fm.getGen()         << "|" << fm.getDurata()           << "|"
+              << (fm.getStatus()==StatusFilm::IN_CURAND?1:0)            << "|"
+              << std::fixed << std::setprecision(1) << fm.getRating()   << "|"
+              << fm.getDescriere()   << "|" << fm.getRegizor()          << "|"
+              << fm.getDistributie() << "|" << fm.getDataPremiera()     << "|"
+              << fm.getTara()        << "|" << fm.getLimba()            << "|"
+              << fm.getClasificare() << "|" << fm.getPosterPath()       << "\n";
     }
 
     
     void incarcaRezervari() {
-        std::ifstream f("toate_rezervarile.txt");
+        std::ifstream f("data/toate_rezervarile.txt");
         if (!f.is_open()) return;
         std::string ln;
         while (std::getline(f,ln)) {
@@ -151,7 +169,7 @@ public:
 
     
     void initConturi() {
-        std::ifstream f("conturi.txt");
+        std::ifstream f("data/conturi.txt");
         if (!f.is_open()) {
             utilizatori.push_back({"admin","admin123",true,{}});
             salveazaConturi();
@@ -193,8 +211,13 @@ public:
 
     
     void adaugaFilmManual(const std::string& titlu, bool e3d, double pret,
-                          const std::string& gen, int dur, StatusFilm st) {
-        filme.push_back(Film(titlu,e3d,pret,gen,dur,st));
+                          const std::string& gen, int dur, StatusFilm st,
+                          double rat=0.0,
+                          const std::string& desc="",  const std::string& reg="",
+                          const std::string& dist="",  const std::string& datP="",
+                          const std::string& tar="",   const std::string& lim="EN",
+                          const std::string& clas="AG",const std::string& post="") {
+        filme.push_back(Film(titlu,e3d,pret,gen,dur,st,rat,desc,reg,dist,datP,tar,lim,clas,post));
         salveazaFilme();
     }
 
@@ -206,14 +229,14 @@ public:
     }
 
     bool editeazaFilm(int idx, const std::string& titlu, bool e3d, double pret,
-                      const std::string& gen, int dur, StatusFilm st) {
+                      const std::string& gen, int dur, StatusFilm st,
+                      double rat=0.0,
+                      const std::string& desc="",  const std::string& reg="",
+                      const std::string& dist="",  const std::string& datP="",
+                      const std::string& tar="",   const std::string& lim="EN",
+                      const std::string& clas="AG",const std::string& post="") {
         if (idx<0||idx>=(int)filme.size()) return false;
-        filme[idx].setTitlu(titlu);
-        filme[idx].setEste3D(e3d);
-        filme[idx].setPretBaza(pret);
-        filme[idx].setGen(gen);
-        filme[idx].setDurata(dur);
-        filme[idx].setStatus(st);
+        filme[idx]=Film(titlu,e3d,pret,gen,dur,st,rat,desc,reg,dist,datP,tar,lim,clas,post);
         salveazaFilme();
         return true;
     }
@@ -272,7 +295,7 @@ public:
         }
 
         
-        std::ofstream f("toate_rezervarile.txt",std::ios::app);
+        std::ofstream f("data/toate_rezervarile.txt",std::ios::app);
         f << "Film: " << film->getTitlu()
           << " | Sala: " << s->getNume()
           << " | Data: " << data.toString()
@@ -296,6 +319,7 @@ public:
         std::string numeFisier="Bilet_"+dataTag
                               +"_R"+std::to_string(r)+"L"+std::to_string(l)
                               +"_"+std::to_string(time(nullptr))+".txt";
+            numeFisier = "data/" + numeFisier;
         
         for (auto& c : numeFisier) if(c=='/') c='_';
         std::ofstream bf(numeFisier);
@@ -322,7 +346,7 @@ public:
         }
         s->elibereazaLoc(data,ora,r,l);
 
-        std::ifstream fIn("toate_rezervarile.txt");
+        std::ifstream fIn("data/toate_rezervarile.txt");
         std::vector<std::string> linii;
         std::string ln;
         std::string cheie="Sala: "+s->getNume()+" | Data: "+data.toString()
@@ -334,14 +358,14 @@ public:
             else linii.push_back(ln);
         }
         fIn.close();
-        std::ofstream fOut("toate_rezervarile.txt",std::ios::trunc);
+        std::ofstream fOut("data/toate_rezervarile.txt",std::ios::trunc);
         for (auto& lne : linii) fOut << lne << "\n";
         std::cout << (gasit?"\n  [OK] Rezervare anulata.\n":"\n  [!] Nu s-a gasit in log.\n");
     }
 
     
     void raportVanzari() {
-        std::ifstream f("toate_rezervarile.txt");
+        std::ifstream f("data/toate_rezervarile.txt");
         if(!f.is_open()) { std::cout << "  (gol)\n"; return; }
         std::map<std::string,int>    biletePeFilm;
         std::map<std::string,double> venitPeFilm;
@@ -387,7 +411,7 @@ public:
     }
 
     void afiseazaToateRezervari() {
-        std::ifstream f("toate_rezervarile.txt");
+        std::ifstream f("data/toate_rezervarile.txt");
         if(!f.is_open()) { std::cout << "  (gol)\n"; return; }
         std::string ln; int nr=0;
         while(std::getline(f,ln)) {
