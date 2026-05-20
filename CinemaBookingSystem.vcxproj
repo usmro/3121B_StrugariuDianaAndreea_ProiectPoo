@@ -57,7 +57,7 @@
       <Optimization>Disabled</Optimization>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;QT_NETWORK_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;QT_NETWORK_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)src;$(QtDir)\include;$(QtDir)\include\QtCore;$(QtDir)\include\QtGui;$(QtDir)\include\QtWidgets;$(QtDir)\include\QtNetwork;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -69,11 +69,11 @@
     <PostBuildEvent>
       <Command>
 "$(QtDir)\bin\windeployqt.exe" --debug "$(OutDir)CinemaBookingSystem.exe"
-if not exist "$(OutDir)data" mkdir "$(OutDir)data"
-if not exist "$(OutDir)data\bilete" mkdir "$(OutDir)data\bilete"
+if not exist "$(OutDir)data\" md "$(OutDir)data"
+if not exist "$(OutDir)data\bilete\" md "$(OutDir)data\bilete"
 copy /Y "$(ProjectDir)data\filme.txt" "$(OutDir)data\"
-copy /Y "$(ProjectDir)data\toate_rezervarile.txt" "$(OutDir)data\" 2&gt;nul
-copy /Y "$(ProjectDir)data\istoric_Diana.txt" "$(OutDir)data\" 2&gt;nul
+if exist "$(ProjectDir)data\toate_rezervarile.txt" copy /Y "$(ProjectDir)data\toate_rezervarile.txt" "$(OutDir)data\"
+if exist "$(ProjectDir)data\istoric_Diana.txt" copy /Y "$(ProjectDir)data\istoric_Diana.txt" "$(OutDir)data\"
       </Command>
       <Message>Deploying Qt DLLs and data files...</Message>
     </PostBuildEvent>
@@ -92,7 +92,7 @@ copy /Y "$(ProjectDir)data\istoric_Diana.txt" "$(OutDir)data\" 2&gt;nul
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;QT_NETWORK_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;QT_NETWORK_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)src;$(QtDir)\include;$(QtDir)\include\QtCore;$(QtDir)\include\QtGui;$(QtDir)\include\QtWidgets;$(QtDir)\include\QtNetwork;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -105,11 +105,11 @@ copy /Y "$(ProjectDir)data\istoric_Diana.txt" "$(OutDir)data\" 2&gt;nul
     <PostBuildEvent>
       <Command>
 "$(QtDir)\bin\windeployqt.exe" --release "$(OutDir)CinemaBookingSystem.exe"
-if not exist "$(OutDir)data" mkdir "$(OutDir)data"
-if not exist "$(OutDir)data\bilete" mkdir "$(OutDir)data\bilete"
+if not exist "$(OutDir)data\" md "$(OutDir)data"
+if not exist "$(OutDir)data\bilete\" md "$(OutDir)data\bilete"
 copy /Y "$(ProjectDir)data\filme.txt" "$(OutDir)data\"
-copy /Y "$(ProjectDir)data\toate_rezervarile.txt" "$(OutDir)data\" 2&gt;nul
-copy /Y "$(ProjectDir)data\istoric_Diana.txt" "$(OutDir)data\" 2&gt;nul
+if exist "$(ProjectDir)data\toate_rezervarile.txt" copy /Y "$(ProjectDir)data\toate_rezervarile.txt" "$(OutDir)data\"
+if exist "$(ProjectDir)data\istoric_Diana.txt" copy /Y "$(ProjectDir)data\istoric_Diana.txt" "$(OutDir)data\"
       </Command>
       <Message>Deploying Qt DLLs and data files...</Message>
     </PostBuildEvent>
