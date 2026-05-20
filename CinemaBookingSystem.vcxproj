@@ -70,6 +70,7 @@
       <Command>
 "$(QtDir)\bin\windeployqt.exe" --debug "$(OutDir)CinemaBookingSystem.exe"
 if not exist "$(OutDir)data" mkdir "$(OutDir)data"
+if not exist "$(OutDir)data\bilete" mkdir "$(OutDir)data\bilete"
 copy /Y "$(ProjectDir)data\filme.txt" "$(OutDir)data\"
 copy /Y "$(ProjectDir)data\toate_rezervarile.txt" "$(OutDir)data\" 2&gt;nul
 copy /Y "$(ProjectDir)data\istoric_Diana.txt" "$(OutDir)data\" 2&gt;nul
@@ -105,6 +106,7 @@ copy /Y "$(ProjectDir)data\istoric_Diana.txt" "$(OutDir)data\" 2&gt;nul
       <Command>
 "$(QtDir)\bin\windeployqt.exe" --release "$(OutDir)CinemaBookingSystem.exe"
 if not exist "$(OutDir)data" mkdir "$(OutDir)data"
+if not exist "$(OutDir)data\bilete" mkdir "$(OutDir)data\bilete"
 copy /Y "$(ProjectDir)data\filme.txt" "$(OutDir)data\"
 copy /Y "$(ProjectDir)data\toate_rezervarile.txt" "$(OutDir)data\" 2&gt;nul
 copy /Y "$(ProjectDir)data\istoric_Diana.txt" "$(OutDir)data\" 2&gt;nul

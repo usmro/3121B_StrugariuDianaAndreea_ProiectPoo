@@ -10,4 +10,4 @@
 //
 // If left empty, poster fetching is disabled and the app works normally.
 // ──────────────────────────────────────────────────────────────────────────────
-#define TMDB_API_KEY "fcb031ae142ac3fb270cec31c987f5cd"
+#define TMDB_API_KEY ""

@@ -319,10 +319,15 @@ public:
         std::string numeFisier="Bilet_"+dataTag
                               +"_R"+std::to_string(r)+"L"+std::to_string(l)
                               +"_"+std::to_string(time(nullptr))+".txt";
-            numeFisier = "data/" + numeFisier;
-        
-        for (auto& c : numeFisier) if(c=='/') c='_';
-        std::ofstream bf(numeFisier);
+        std::string folderPath = "data/bilete/";
+        std::string fullPath   = folderPath + numeFisier;
+        // ensure folder exists
+        #ifdef _WIN32
+        std::system("if not exist \"data\\bilete\" mkdir data\\bilete >nul 2>&1");
+        #else
+        std::system("mkdir -p data/bilete");
+        #endif
+        std::ofstream bf(fullPath);
         bf << "==========================================\n"
            << "          BILET CINEMATOGRAF              \n"
            << "==========================================\n"
@@ -336,7 +341,7 @@ public:
            << " COD  : " << genCod(r,l) << "\n"
            << "==========================================\n";
         bf.close();
-        std::cout << "\n  [OK] Bilet generat: " << numeFisier << "\n";
+        std::cout << "\n  [OK] Bilet generat: " << fullPath << "\n";
     }
 
     void anuleazaRezervare(int idSala, const Data& data, const std::string& ora, int r, int l) {
