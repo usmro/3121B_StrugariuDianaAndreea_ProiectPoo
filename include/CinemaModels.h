@@ -12,6 +12,28 @@
 #include <ctime>
 #include <stdexcept>
 
+// ─── Custom exceptions ────────────────────────────────────────────────────────
+class LocOcupatException : public std::runtime_error {
+public:
+    int rand, loc;
+    LocOcupatException(int r, int l)
+        : std::runtime_error("Locul R" + std::to_string(r+1) +
+                             " L" + std::to_string(l+1) + " este deja ocupat."),
+          rand(r), loc(l) {}
+};
+
+class IndexInvalidException : public std::out_of_range {
+public:
+    IndexInvalidException(const std::string& context, int val)
+        : std::out_of_range("Index invalid in " + context +
+                            ": " + std::to_string(val)) {}
+};
+
+class SalaNotFoundException : public std::runtime_error {
+public:
+    explicit SalaNotFoundException(int id)
+        : std::runtime_error("Sala cu ID " + std::to_string(id) + " nu a fost gasita.") {}
+};
 
 enum class CategorieLocSeat { STANDARD, VIP, CUPLU };
 
@@ -30,7 +52,33 @@ inline double multiplicatorCategorie(CategorieLocSeat c) {
     }
 }
 
+// ─── Food ────────────────────────────────────────────────────────────────────
+struct FoodItem {
+    std::string id;
+    std::string emoji;
+    std::string nume;
+    std::string descriere;
+    double      pret;
+    std::string categorie; // "Popcorn","Bauturi","Snacks","Combos"
+};
 
+struct FoodOrder {
+    std::map<std::string,int> items; // item id → qty
+    double total(const std::vector<FoodItem>& menu) const {
+        double t=0;
+        for(auto& [id,qty]:items) for(auto& f:menu) if(f.id==id){ t+=f.pret*qty; break; }
+        return t;
+    }
+    bool empty() const { for(auto& [id,qty]:items) if(qty>0) return false; return true; }
+    std::string toStr(const std::vector<FoodItem>& menu) const {
+        std::ostringstream oss; bool first=true;
+        for(auto& [id,qty]:items){ if(qty<=0) continue;
+            for(auto& f:menu) if(f.id==id){ if(!first)oss<<", "; oss<<qty<<"x "<<f.nume; first=false; break; } }
+        return oss.str();
+    }
+};
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
 struct Data {
     int zi, luna, an;
     std::string toString() const {
@@ -52,7 +100,6 @@ inline Data dataAzi() {
     tm* lt = localtime(&t);
     return {lt->tm_mday, lt->tm_mon+1, lt->tm_year+1900};
 }
-
 inline std::vector<Data> urmatoroarele7Zile() {
     std::vector<Data> zile;
     time_t t = time(nullptr);
@@ -63,7 +110,6 @@ inline std::vector<Data> urmatoroarele7Zile() {
     }
     return zile;
 }
-
 inline std::string numeZiSaptamana(const Data& d) {
     tm t{};
     t.tm_mday = d.zi; t.tm_mon = d.luna-1; t.tm_year = d.an-1900;
@@ -72,9 +118,18 @@ inline std::string numeZiSaptamana(const Data& d) {
     return zile[t.tm_wday];
 }
 
+// ─── Day-based price multiplier ──────────────────────────────────────────────
+// Weekend (Sâmbătă/Duminică) = ×1.2, weekday = ×1.0
+inline double multiplicatorZi(const Data& d) {
+    tm t{};
+    t.tm_mday = d.zi; t.tm_mon = d.luna-1; t.tm_year = d.an-1900;
+    mktime(&t);
+    // 0=Sun, 6=Sat
+    return (t.tm_wday == 0 || t.tm_wday == 6) ? 1.2 : 1.0;
+}
 
+// ─── Film ─────────────────────────────────────────────────────────────────────
 enum class StatusFilm { RULAZA_ACUM, IN_CURAND };
-
 inline std::string numeStatus(StatusFilm s) {
     return s == StatusFilm::RULAZA_ACUM ? "Ruleaza acum" : "In curand";
 }
@@ -142,21 +197,19 @@ public:
     void setPosterPath(const std::string& p)   { posterPath=p; }
 };
 
-
+// ─── Sala ─────────────────────────────────────────────────────────────────────
 class Sala {
 private:
     int         id;
     std::string nume;
     int         randuri;
     int         coloane;
-    
     std::map<std::string, std::vector<std::vector<int>>> ocupare;
     std::vector<std::vector<CategorieLocSeat>> categorii;
 
     std::string cheie(const Data& d, const std::string& ora) const {
         return d.toString() + "|" + ora;
     }
-
     void initCategorii() {
         categorii.assign(randuri, std::vector<CategorieLocSeat>(coloane, CategorieLocSeat::STANDARD));
         if (randuri > 0)
@@ -168,7 +221,6 @@ private:
             categorii[0][mid]   = CategorieLocSeat::CUPLU;
         }
     }
-
 public:
     Sala(int _id, std::string _n, int _r, int _c)
         : id(_id), nume(_n), randuri(_r), coloane(_c) { initCategorii(); }
@@ -182,30 +234,32 @@ public:
         if (r>=0&&r<randuri&&l>=0&&l<coloane) return categorii[r][l];
         return CategorieLocSeat::STANDARD;
     }
-
     void initOra(const Data& d, const std::string& ora) {
         std::string k = cheie(d,ora);
         if (!ocupare.count(k))
             ocupare[k] = std::vector<std::vector<int>>(randuri, std::vector<int>(coloane,0));
     }
-
     bool esteOcupat(const Data& d, const std::string& ora, int r, int l) {
         initOra(d,ora);
-        if (r>=0&&r<randuri&&l>=0&&l<coloane) return ocupare[cheie(d,ora)][r][l]==1;
-        return true;
+        if (r<0||r>=randuri||l<0||l>=coloane)
+            throw IndexInvalidException("Sala::esteOcupat", r*100+l);
+        return ocupare[cheie(d,ora)][r][l]==1;
     }
-
+    // throws LocOcupatException if seat already taken, IndexInvalidException if out of bounds
     void ocupaLoc(const Data& d, const std::string& ora, int r, int l) {
         initOra(d,ora);
-        if (r>=0&&r<randuri&&l>=0&&l<coloane) ocupare[cheie(d,ora)][r][l]=1;
+        if (r<0||r>=randuri||l<0||l>=coloane)
+            throw IndexInvalidException("Sala::ocupaLoc", r*100+l);
+        if (ocupare[cheie(d,ora)][r][l]==1)
+            throw LocOcupatException(r,l);
+        ocupare[cheie(d,ora)][r][l]=1;
     }
-
     void elibereazaLoc(const Data& d, const std::string& ora, int r, int l) {
         std::string k=cheie(d,ora);
-        if (ocupare.count(k)&&r>=0&&r<randuri&&l>=0&&l<coloane)
-            ocupare[k][r][l]=0;
+        if (r<0||r>=randuri||l<0||l>=coloane)
+            throw IndexInvalidException("Sala::elibereazaLoc", r*100+l);
+        if (ocupare.count(k)) ocupare[k][r][l]=0;
     }
-
     int locuriLibere(const Data& d, const std::string& ora) {
         initOra(d,ora);
         int cnt=0;
@@ -215,10 +269,6 @@ public:
                 if (mat[r][l]==0) ++cnt;
         return cnt;
     }
-
-    
-    int selecteazaLocInteractiv(const Data& d, const std::string& ora);
-
     void afiseazaHarta(const Data& d, const std::string& ora, int selR=-1, int selL=-1) {
         initOra(d,ora);
         auto& mat = ocupare[cheie(d,ora)];
@@ -240,11 +290,62 @@ public:
             std::cout << " |\n";
         }
         std::cout << "       " << std::string(coloane*3+2,'-') << "\n";
-        std::cout << "  Legenda: O=Standard  V=VIP(x1.5)  C=Cuplu(x1.8)  X=Ocupat  [*]=Selectat\n\n";
     }
 };
 
+// ─── Cinema location ─────────────────────────────────────────────────────────
+struct CinemaLocation {
+    std::string id;
+    std::string nume;
+    std::string oras;
+    std::string adresa;
+    std::string regiune; // "Moldova","Muntenia","Transilvania","Oltenia","Dobrogea","Banat","Crisana"
+    std::vector<Sala>        sali;
+    std::vector<std::string> oreDisponibile = {"11:00","14:00","17:30","20:45"};
+};
 
+// ─── Region map ──────────────────────────────────────────────────────────────
+// Maps city names (lowercase) to region. Comparison is ASCII-only (no diacritics).
+inline std::string getRegiune(const std::string& oras) {
+    std::string o = oras;
+    std::transform(o.begin(),o.end(),o.begin(),::tolower);
+    auto has = [&](const char* s){ return o.find(s) != std::string::npos; };
+    // Moldova
+    if(has("suceava")||has("iasi")||has("bacau")||has("piatra")||
+       has("neamt")||has("botosani")||has("vaslui")||has("galati")||
+       has("vrancea")||has("focsani")||has("roman")||has("pascani"))
+        return "Moldova";
+    // Transilvania
+    if(has("brasov")||has("cluj")||has("sibiu")||has("mures")||
+       has("alba")||has("bistrita")||has("gheorghe")||has("miercurea")||
+       has("deva")||has("hunedoara")||has("fagaras")||has("odorheiu")||
+       has("reghin")||has("sighisoara"))
+        return "Transilvania";
+    // Muntenia
+    if(has("bucuresti")||has("bucharest")||has("ploiesti")||has("pitesti")||
+       has("targoviste")||has("buzau")||has("giurgiu")||has("alexandria")||
+       has("gaesti")||has("ramnicu valcea"))
+        return "Muntenia";
+    // Oltenia
+    if(has("craiova")||has("ramnicu")||has("drobeta")||has("turnu")||
+       has("slatina")||has("targu jiu")||has("caracal")||has("bailesti"))
+        return "Oltenia";
+    // Dobrogea
+    if(has("constanta")||has("tulcea")||has("mangalia")||has("medgidia")||
+       has("cernavoda")||has("navodari"))
+        return "Dobrogea";
+    // Banat
+    if(has("timisoara")||has("resita")||has("lugoj")||has("caransebes")||
+       has("deta")||has("sannicolau"))
+        return "Banat";
+    // Crisana
+    if(has("oradea")||has("arad")||has("baia mare")||has("satu mare")||
+       has("zalau")||has("marghita")||has("beius"))
+        return "Crisana";
+    return "Muntenia"; // fallback
+}
+
+// ─── Rezervare ───────────────────────────────────────────────────────────────
 class Rezervare {
 protected:
     std::string titluFilm;
@@ -261,16 +362,13 @@ public:
               const std::string& cat, const std::string& usr)
         : titluFilm(tf), salaNume(sn), data(d), ora(o),
           rand(r), loc(l), pretFinal(p), categorieLoc(cat), username(usr) {}
-
     virtual void afiseaza() const {
-        std::cout << "  Film: " << titluFilm
-                  << " | " << salaNume
+        std::cout << "  Film: " << titluFilm << " | " << salaNume
                   << " | " << data.toString() << " " << ora
                   << " | R" << rand+1 << " L" << loc+1
                   << " [" << categorieLoc << "]"
                   << " | " << std::fixed << std::setprecision(2) << pretFinal << " RON\n";
     }
-
     std::string getTitluFilm()   const { return titluFilm; }
     std::string getSalaNume()    const { return salaNume; }
     Data        getData()        const { return data; }
@@ -280,7 +378,6 @@ public:
     double      getPretFinal()   const { return pretFinal; }
     std::string getCategorie()   const { return categorieLoc; }
     std::string getUsername()    const { return username; }
-
     virtual ~Rezervare() {}
 };
 
@@ -292,21 +389,19 @@ public:
                     const std::string& cat, const std::string& usr, const std::string& e)
         : Rezervare(tf,sn,d,o,r,l,p,cat,usr), email(e) {}
     void afiseaza() const override {
-        std::cout << "  [ONLINE] ";
-        Rezervare::afiseaza();
+        std::cout << "  [ONLINE] "; Rezervare::afiseaza();
         std::cout << "           Email: " << email << "\n";
     }
     std::string getEmail() const { return email; }
 };
 
-
+// ─── Cont ────────────────────────────────────────────────────────────────────
 struct ContUtilizator {
     std::string username;
     std::string parola;
     bool        esteAdmin;
-    std::vector<std::string> istoricRezervari; // persistat in fisier
+    std::vector<std::string> istoricRezervari;
 };
-
 
 class ICinemaService {
 public:
