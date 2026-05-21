@@ -3,12 +3,13 @@ project(CinemaBookingSystem LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
 
-qt_standard_project_setup()
-
-qt_add_executable(CinemaBookingSystem
+add_executable(CinemaBookingSystem
     src/main.cpp
     src/mainwindow_builders.cpp
     src/mainwindow_slots.cpp
@@ -30,7 +31,10 @@ target_link_libraries(CinemaBookingSystem PRIVATE
     Qt6::Network
 )
 
-foreach(datafile filme.txt toate_rezervarile.txt istoric_Diana.txt)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/data)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/data/bilete)
+
+foreach(datafile filme.txt)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/data/${datafile}")
         configure_file(data/${datafile} ${CMAKE_CURRENT_BINARY_DIR}/data/${datafile} COPYONLY)
     endif()

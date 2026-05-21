@@ -2,11 +2,9 @@ name: Build & Package
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main, master ]
-  release:
-    types: [ created ]
+    branches: [ main ]
 
 jobs:
   build-linux:
@@ -22,11 +20,10 @@ jobs:
             qt6-base-dev qt6-base-dev-tools \
             cmake build-essential ninja-build \
             libgl-dev libglu1-mesa-dev \
+            libxkbcommon-dev libxkbcommon-x11-0 \
             libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
             libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 \
-            libxcb-xinerama0 libxkbcommon-x11-0 \
-            libfontconfig1 libfreetype6 \
-            fuse libfuse2 wget
+            libxcb-xinerama0 libfontconfig1 libfreetype6
 
       - name: Configure
         run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -34,61 +31,16 @@ jobs:
       - name: Build
         run: cmake --build build --parallel
 
-      - name: Download linuxdeploy
+      - name: Run tests
         run: |
-          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-          wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
-          chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
+          g++ -std=c++20 -I include tests/test_main.cpp -o tests/run_tests
+          ./tests/run_tests
 
-      - name: Create AppDir
-        run: |
-          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
-          cp build/CinemaBookingSystem AppDir/usr/bin/
-          cp data/filme.txt AppDir/usr/bin/
-          cp data/toate_rezervarile.txt AppDir/usr/bin/ 2>/dev/null || touch AppDir/usr/bin/toate_rezervarile.txt
-          cp data/istoric_Diana.txt AppDir/usr/bin/ 2>/dev/null || true
-          cat > AppDir/usr/share/applications/cinema.desktop << 'DESK'
-          [Desktop Entry]
-          Name=Cinema Booking System
-          Exec=CinemaBookingSystem
-          Icon=cinema
-          Type=Application
-          Categories=Utility;
-          DESK
-          # Create a simple icon placeholder (red square)
-          python3 -c "
-          try:
-              from PIL import Image, ImageDraw
-              img = Image.new('RGB', (256,256), '#e50914')
-              d = ImageDraw.Draw(img)
-              d.text((80,100), 'CIN', fill='white')
-              img.save('AppDir/usr/share/icons/hicolor/256x256/apps/cinema.png')
-          except:
-              import subprocess
-              subprocess.run(['convert', '-size', '256x256', 'xc:#e50914', 'AppDir/usr/share/icons/hicolor/256x256/apps/cinema.png'], check=False)
-          " 2>/dev/null || cp /usr/share/pixmaps/gnome-panel.png AppDir/usr/share/icons/hicolor/256x256/apps/cinema.png 2>/dev/null || true
-
-      - name: Package AppImage
-        env:
-          QMAKE: /usr/lib/qt6/bin/qmake
-          LD_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu
-        run: |
-          ./linuxdeploy-x86_64.AppImage \
-            --appdir AppDir \
-            --plugin qt \
-            --output appimage \
-          || true
-          ls -la *.AppImage 2>/dev/null || echo "AppImage creation skipped, binary available"
-
-      - name: Upload binary artifact
+      - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
           name: CinemaBookingSystem-linux
-          path: |
-            build/CinemaBookingSystem
-            *.AppImage
-            data/filme.txt
-            data/toate_rezervarile.txt
+          path: build/CinemaBookingSystem
           if-no-files-found: warn
 
   build-windows:
@@ -106,7 +58,7 @@ jobs:
           arch: win64_msvc2019_64
           cache: true
 
-      - name: Configure (MSVC)
+      - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
@@ -117,7 +69,7 @@ jobs:
           mkdir deploy
           copy build\Release\CinemaBookingSystem.exe deploy\
           copy data\filme.txt deploy\
-          copy data\toate_rezervarile.txt deploy\ 2>nul || echo "" > deploy\toate_rezervarile.txt
+          echo. > deploy\toate_rezervarile.txt
           windeployqt deploy\CinemaBookingSystem.exe
 
       - name: Upload Windows artifact
