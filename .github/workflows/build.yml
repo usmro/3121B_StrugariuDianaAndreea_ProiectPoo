@@ -69,7 +69,7 @@ jobs:
           mkdir deploy
           copy build\Release\CinemaBookingSystem.exe deploy\
           copy data\filme.txt deploy\
-          echo. > deploy\toate_rezervarile.txt
+          New-Item -Path deploy\toate_rezervarile.txt -ItemType File -Force
           windeployqt deploy\CinemaBookingSystem.exe
 
       - name: Upload Windows artifact
