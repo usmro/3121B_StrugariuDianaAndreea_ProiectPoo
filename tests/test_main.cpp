@@ -1,8 +1,6 @@
-// ============================================================
-// Teste unitare – Cinema Booking System
-// Compilare: g++ -std=c++20 -I../include tests/test_main.cpp -o tests/run_tests
-// Rulare:    ./tests/run_tests
-// ============================================================
+
+
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <cassert>
 #include <iostream>
@@ -27,7 +25,7 @@ static int passed = 0, failed = 0;
 } while(0)
 #define ASSERT_NEAR(a,b,eps) do { if(std::abs((a)-(b))>(eps)) throw std::runtime_error("Valori diferite: " + std::to_string(a) + " vs " + std::to_string(b)); } while(0)
 
-// ── 1. Film ──────────────────────────────────────────────────────────────────
+
 TEST(test_film_getteri) {
     Film f("Inception", true, 30.0, "SF", 148,
            StatusFilm::RULAZA_ACUM, 8.8, "Vis in vis", "Nolan", "", "2010", "SUA", "EN", "AP12");
@@ -49,7 +47,7 @@ TEST(test_film_setteri) {
     ASSERT(f.getEste3D() == true);
 }
 
-// ── 2. Sala ──────────────────────────────────────────────────────────────────
+
 TEST(test_sala_rezervare_simpla) {
     Sala s(1, "Sala Test", 4, 8);
     Data d{15, 6, 2025};
@@ -65,18 +63,22 @@ TEST(test_sala_loc_ocupat_exceptie) {
     Sala s(1, "Sala Test", 4, 8);
     Data d{15, 6, 2025};
     s.ocupaLoc(d, "20:45", 1, 1);
-    // A doua ocupare pe acelasi loc trebuie sa arunce LocOcupatException
+    
+
     ASSERT_THROWS(s.ocupaLoc(d, "20:45", 1, 1), LocOcupatException);
 }
 
 TEST(test_sala_index_invalid_exceptie) {
     Sala s(1, "Sala Test", 4, 8);
     Data d{15, 6, 2025};
-    // Rand -1 invalid
+    
+
     ASSERT_THROWS(s.ocupaLoc(d, "20:45", -1, 0), IndexInvalidException);
-    // Rand prea mare
+    
+
     ASSERT_THROWS(s.ocupaLoc(d, "20:45", 99, 0), IndexInvalidException);
-    // Coloana invalida
+    
+
     ASSERT_THROWS(s.ocupaLoc(d, "20:45", 0, 99), IndexInvalidException);
 }
 
@@ -91,16 +93,19 @@ TEST(test_sala_elibereaza) {
 
 TEST(test_sala_categorii) {
     Sala s(1, "Test", 5, 10);
-    // Ultimul rand = VIP
+    
+
     ASSERT(s.getCategorieLocSeat(4, 0) == CategorieLocSeat::VIP);
-    // Mijlocul primului rand = Cuplu
+    
+
     ASSERT(s.getCategorieLocSeat(0, 4) == CategorieLocSeat::CUPLU);
     ASSERT(s.getCategorieLocSeat(0, 5) == CategorieLocSeat::CUPLU);
-    // Rest = Standard
+    
+
     ASSERT(s.getCategorieLocSeat(2, 3) == CategorieLocSeat::STANDARD);
 }
 
-// ── 3. Multiplicatori pret ────────────────────────────────────────────────────
+
 TEST(test_multiplicator_categorie) {
     ASSERT_NEAR(multiplicatorCategorie(CategorieLocSeat::STANDARD), 1.0,  0.001);
     ASSERT_NEAR(multiplicatorCategorie(CategorieLocSeat::VIP),      1.5,  0.001);
@@ -117,15 +122,17 @@ TEST(test_pret_3d) {
 }
 
 TEST(test_multiplicator_zi_weekend) {
-    // 5 iulie 2025 = Sâmbătă → weekend
+    
+
     Data weekend{5, 7, 2025};
     ASSERT_NEAR(multiplicatorZi(weekend), 1.2, 0.001);
-    // 7 iulie 2025 = Luni → weekday
+    
+
     Data weekday{7, 7, 2025};
     ASSERT_NEAR(multiplicatorZi(weekday), 1.0, 0.001);
 }
 
-// ── 4. Rezervare ─────────────────────────────────────────────────────────────
+
 TEST(test_rezervare_getteri) {
     Data d{10, 5, 2025};
     Rezervare r("Inception","Sala 1",d,"20:45",2,3,45.0,"VIP","ion");
@@ -145,7 +152,7 @@ TEST(test_rezervare_online) {
     ASSERT(ro.getTitluFilm() == "Dune");
 }
 
-// ── 5. FoodOrder ──────────────────────────────────────────────────────────────
+
 TEST(test_food_order) {
     std::vector<FoodItem> meniu = {
         {"POP_M_SAR","🍿","Popcorn Mare Sărat","",18.0,"Popcorn"},
@@ -156,10 +163,11 @@ TEST(test_food_order) {
     fo.items["POP_M_SAR"] = 2;
     fo.items["COLA_S"]    = 1;
     ASSERT(!fo.empty());
-    ASSERT_NEAR(fo.total(meniu), 46.0, 0.001); // 2x18 + 1x10
+    ASSERT_NEAR(fo.total(meniu), 46.0, 0.001); 
+
 }
 
-// ── 6. Data ───────────────────────────────────────────────────────────────────
+
 TEST(test_data_comparare) {
     Data d1{1, 1, 2025}, d2{2, 1, 2025}, d3{1, 1, 2025};
     ASSERT(d1 < d2);
@@ -173,7 +181,7 @@ TEST(test_data_tostring) {
     ASSERT(d.toString() == "05/03/2025");
 }
 
-// ── 7. getRegiune ─────────────────────────────────────────────────────────────
+
 TEST(test_get_regiune) {
     ASSERT(getRegiune("Suceava")    == "Moldova");
     ASSERT(getRegiune("Iasi")       == "Moldova");
@@ -186,7 +194,7 @@ TEST(test_get_regiune) {
     ASSERT(getRegiune("Craiova")    == "Oltenia");
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 int main() {
     std::cout << "\n=== Teste unitare – Cinema Booking System ===\n\n";
 

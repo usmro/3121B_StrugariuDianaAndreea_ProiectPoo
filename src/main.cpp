@@ -52,7 +52,8 @@ int main(int argc, char* argv[]){
     QFont f("Segoe UI",10);
     f.setHintingPreference(QFont::PreferFullHinting);
     app.setFont(f);
-    // Always resolve data files relative to the executable
+    
+
     QDir::setCurrent(QCoreApplication::applicationDirPath());
     MainWindow w; w.resize(1100,740); w.show();
     return app.exec();
