@@ -1,199 +1,222 @@
-# Documentație – Sistem de Rezervări Cinema
+# Sistem de Rezervări Cinema — Documentație
 
-## 1. Descriere generală
+## Ce am construit
 
-Aplicație desktop Qt C++ pentru gestionarea rezervărilor de bilete la cinematograf.
-Suportă multiple locații, rezervare în grup, comandă food & drinks și detecție automată a locației.
+Am pornit de la o temă simplă de rezervare cinema și am ajuns la o aplicație desktop Qt care simulează destul de fidel cum funcționează un sistem real de booking. Aplicația gestionează o rețea de 24 de cinematografe din toată România, generează automat programul de proiecții respectând reguli logice (filmele horror nu rulează dimineața, animațiile nu rulează la miezul nopții etc.), permite rezervarea în grup, comandă de mâncare și exportul rezervării în calendar.
 
 ---
 
-## 2. Descrierea claselor
+## Structura claselor
 
-### `Film`
-Reprezintă un film din repertoriul cinematografului.
+### Film
+Clasa de bază a aplicației. Stochează toate datele unui film — titlu, durată, gen, rating, dacă e 3D sau nu, datele despre premieră și un ID YouTube pentru trailer. Rating-ul nu e static, ci se recalculează automat din evaluările utilizatorilor.
 
 | Atribut | Tip | Descriere |
 |---|---|---|
 | `titlu` | `string` | Titlul filmului |
 | `este3D` | `bool` | Format 2D sau 3D |
 | `pretBaza` | `double` | Prețul de bază al biletului (RON) |
-| `gen` | `string` | Genul filmului (Acțiune, SF, etc.) |
+| `gen` | `string` | Genul filmului |
 | `durata` | `int` | Durata în minute |
 | `status` | `StatusFilm` | `RULAZA_ACUM` sau `IN_CURAND` |
-| `rating` | `double` | Rating /10 |
-| `descriere` | `string` | Sinopsis |
-| `regizor` | `string` | Regizorul filmului |
+| `rating` | `double` | Rating /10 — actualizat din evaluările utilizatorilor |
+| `trailerYtId` | `string` | ID-ul YouTube al trailerului |
 
-### `Sala`
-Reprezintă o sală fizică dintr-un cinematograf, cu o matrice de locuri.
+### Sala
+Modelează o sală fizică ca o matrice de locuri. Fiecare loc are un tip (Standard, VIP sau Cuplu) și starea lui e ținută per dată + oră — dacă sala e plină vineri la 20:00 asta nu afectează disponibilitatea sâmbătă.
 
 | Atribut | Tip | Descriere |
 |---|---|---|
 | `id` | `int` | Identificator unic |
-| `nume` | `string` | Numele sălii |
-| `randuri` | `int` | Numărul de rânduri |
-| `coloane` | `int` | Numărul de coloane |
+| `randuri`, `coloane` | `int` | Dimensiunile matricei |
 | `ocupare` | `map<cheie, matrice>` | Starea locurilor per dată+oră |
-| `categorii` | `matrice` | Tipul fiecărui loc (Standard/VIP/Cuplu) |
+| `categorii` | `matrice` | Tipul fiecărui loc |
 
-**Metode cheie:**
-- `ocupaLoc(data, ora, r, l)` — rezervă un loc; aruncă excepție dacă e ocupat
-- `elibereazaLoc(data, ora, r, l)` — eliberează un loc
-- `locuriLibere(data, ora)` — returnează numărul de locuri disponibile
-- `esteOcupat(data, ora, r, l)` — verifică dacă un loc e ocupat
+Metoda `ocupaLoc` aruncă `LocOcupatException` dacă locul e deja luat și `IndexInvalidException` dacă indexul e în afara matricei — nu am lăsat erorile să treacă silențios.
 
-### `Rezervare`
-Înregistrează o rezervare a unui loc de un utilizator.
+### Rezervare și RezervareOnline
+`Rezervare` e clasa de bază, `RezervareOnline` o extinde adăugând emailul clientului. Metoda `afiseaza()` e virtuală și suprascrisă în clasa derivată — folosit pentru polimorfism.
+
+### Programare
+Reprezintă un slot de proiecție — un film într-o sală la o oră anume, pe o anumită dată. Programările sunt generate automat de sistem, nu introduse manual.
 
 | Atribut | Tip | Descriere |
 |---|---|---|
-| `titluFilm` | `string` | Filmul rezervat |
-| `salaNume` | `string` | Sala în care se face rezervarea |
+| `filmTitlu` | `string` | Filmul programat |
+| `salaId` | `int` | Sala în care rulează |
+| `ora` | `string` | Ora de start |
+| `oraFinal` | `string` | Ora de final (start + durată + 45 min buffer) |
 | `data` | `Data` | Data proiecției |
-| `ora` | `string` | Ora proiecției |
-| `rand`, `loc` | `int` | Poziția locului |
-| `pretFinal` | `double` | Prețul calculat |
-| `username` | `string` | Utilizatorul care a rezervat |
 
-### `RezervareOnline` *(extinde Rezervare)*
-Adaugă atributul `emailClient` pentru confirmarea prin email.
+### CinemaLocation
+O sucursală a cinematografului. Are propriile săli, propriul program, propriile ore de funcționare și un multiplicator de preț. Există 3 tier-uri:
 
-### `Cinematograf` *(implementează ICinemaService)*
-Clasa principală de business. Agregă locații, filme, rezervări și conturi.
-
-**Responsabilități:**
-- Gestionare filme (CRUD)
-- Gestionare locații cu sălile lor
-- Procesare rezervări cu calcul de preț
-- Autentificare utilizatori
-- Persistare date în fișiere text
-
-### `CinemaLocation`
-Reprezintă o sucursală a cinematografului (ex: Cinema City Suceava).
+- **Premium** — acces la toate filmele inclusiv cele noi, prețuri mai mari, program extins
+- **Standard** — repertoriul obișnuit
+- **Basic** — nu rulează filmele cu rating foarte mare, prețuri reduse
 
 | Atribut | Tip | Descriere |
 |---|---|---|
-| `id` | `string` | Cod unic (ex: SUC1) |
-| `oras` | `string` | Orașul |
-| `regiune` | `string` | Regiunea geografică |
+| `id`, `nume`, `oras` | `string` | Identificare |
+| `regiune` | `string` | Moldova / Transilvania / Muntenia etc. |
+| `tier` | `CinemaTier` | PREMIUM / STANDARD / BASIC |
+| `pretMultiplicator` | `double` | Factor de preț al locației |
 | `sali` | `vector<Sala>` | Sălile din această locație |
+| `program` | `vector<Programare>` | Programul generat automat |
 
-### `ICinemaService` *(interfață)*
-Interfață abstractă cu metode pure virtuale:
+### Cinematograf
+Clasa principală care leagă totul. Implementează interfața `ICinemaService` cu metodele pur virtuale `adaugaFilm` și `adaugaSala`. Gestionează autentificarea, rezervările, generarea programului, evaluările și preferințele de loc.
+
+### ICinemaService
+Interfață abstractă — definește ce servicii trebuie să ofere orice cinematograf, indiferent de implementare:
 ```cpp
 virtual void adaugaFilm(Film f) = 0;
 virtual void adaugaSala(Sala s) = 0;
 ```
 
-### `FoodItem` / `FoodOrder`
-Reprezintă un produs din meniu și o comandă de food pentru o rezervare.
+### PreferintaLoc
+Stochează tipul și poziția preferată de loc a utilizatorului, salvată după fiecare rezervare și afișată ca hint pe harta sălii la următoarea vizită.
+
+### FoodItem / FoodOrder
+Reprezintă un produs din meniu și o comandă de food. Meniul conține 17 produse în 4 categorii: Popcorn, Băuturi, Snacks, Combos.
 
 ---
 
-## 3. Diagrame UML
+## Diagrame UML
 
-### Diagrama claselor (simplificată)
+### Diagrama claselor
 
 ```
 ICinemaService (interfata)
-    ↑ implementeaza
+    ^ implementeaza
 Cinematograf
-    ├── agregare ──→ vector<CinemaLocation>
-    │                   └── vector<Sala>
-    ├── agregare ──→ vector<Film>
-    ├── agregare ──→ vector<Rezervare*>
-    │                   └── RezervareOnline (derivata)
-    └── agregare ──→ vector<ContUtilizator>
+    +-- agregeaza --> vector<CinemaLocation>
+    |                     +-- vector<Sala>
+    |                     +-- vector<Programare>
+    +-- agregeaza --> vector<Film>
+    +-- agregeaza --> vector<Rezervare*>
+    |                     +-- RezervareOnline (derivata)
+    +-- agregeaza --> vector<ContUtilizator>
+                          +-- map<string,int> evaluari
+                          +-- PreferintaLoc preferinta
 
-Rezervare ──── are un ────→ Film
-Rezervare ──── are un loc in ─→ Sala
+Rezervare ----are un----> Film
+Rezervare ----are un loc in----> Sala
+Programare ---are un----> Film
+Programare ---are loc in----> Sala
 ```
 
 ### Fluxul de rezervare
 
 ```
-Login → Alege Locație → Meniu Principal
-  → Alege Film → Detalii Film → Alege Sală
-  → Alege Data → Alege Ora → Selectează Locuri (grup)
-  → Food & Drinks (opțional) → Confirmare → Bilet generat
+Login --> Alege Locatie --> Meniu Principal
+  --> Alege Film --> Detalii Film --> Alege Data
+  --> Alege Programare (sala + ora) --> Selecteaza Locuri
+  --> Food & Drinks (optional) --> Confirmare
+  --> Export Calendar (.ics) [optional]
 ```
 
 ---
 
-## 4. Concepte POO utilizate
+## Concepte POO utilizate
 
-### Încapsulare
-Toate atributele claselor (`Film`, `Sala`, `Rezervare`) sunt `private`, accesul se face exclusiv prin getteri/setteri publici.
+**Încapsulare** — toate atributele claselor sunt `private`, accesul se face exclusiv prin getteri/setteri publici.
 
-### Moștenire
-`RezervareOnline` extinde `Rezervare` adăugând `emailClient`. Supradefiniție (`override`) a metodei virtuale `afiseaza()`.
+**Moștenire** — `RezervareOnline` extinde `Rezervare` adăugând `emailClient`. Supradefinire (`override`) a metodei virtuale `afiseaza()`.
 
-### Polimorfism
-`vector<Rezervare*>` poate conține atât obiecte `Rezervare` cât și `RezervareOnline`. Metoda `afiseaza()` virtuală este apelată polimorfic.
+**Polimorfism** — `vector<Rezervare*>` poate conține atât obiecte `Rezervare` cât și `RezervareOnline`. Metoda `afiseaza()` virtuală este apelată polimorfic.
 
-### Abstractizare
-`ICinemaService` definește contractul public al serviciului cinema prin metode pur virtuale. `Cinematograf` oferă implementarea concretă.
+**Abstractizare** — `ICinemaService` definește contractul public al serviciului cinema prin metode pur virtuale.
 
-### Tratare excepții
+**Tratare excepții** — 3 clase proprii de excepții:
 ```cpp
-// Aruncat de Sala::ocupaLoc când locul e deja rezervat
 class LocOcupatException : public std::runtime_error { ... };
-
-// Aruncat la index în afara matricei de locuri
 class IndexInvalidException : public std::out_of_range { ... };
-
-// Aruncat de Cinematograf::getSalaById pentru ID invalid
 class SalaNotFoundException : public std::runtime_error { ... };
 ```
 
 ---
 
-## 5. Calculul prețului biletului
+## Cum funcționează prețurile
 
-Prețul final ține cont de trei factori:
+Nu am vrut un preț fix — în realitate biletele variază în funcție de mai mulți factori, și mi s-a părut mai interesant de implementat:
 
 ```
-pret_final = pret_baza
-           + (este3D ? +10 RON : 0)          // suprataxa 3D
-           × multiplicator_categorie           // Standard×1.0, VIP×1.5, Cuplu×1.8
-           × multiplicator_zi                  // Weekend×1.2, Weekday×1.0
+pret = pret_baza_film
+     + 10 RON daca e 3D
+     x tip_loc (Standard x1.0 / VIP x1.5 / Cuplu x1.8)
+     x zi (weekend x1.2 / weekday x1.0)
+     x locatie (Basic ~x0.85 / Standard ~x1.0 / Premium ~x1.25)
 ```
 
-**Exemple:**
-| Scenariu | Calcul | Total |
+---
+
+## Sistemul de programări automat
+
+Asta e probabil cea mai complexă parte. Când utilizatorul selectează o locație, aplicația generează automat un program de proiecții pentru 7 zile, pentru fiecare sală.
+
+Algoritmul pornește de la ora de deschidere și umple fiecare sală cu filme unul după altul, respectând:
+
+**Reguli de gen:**
+
+| Gen | Cel mai devreme | Cel mai târziu |
 |---|---|---|
-| 2D, Standard, weekday | 25 × 1.0 × 1.0 | 25 RON |
-| 3D, Standard, weekday | (25+10) × 1.0 × 1.0 | 35 RON |
-| 2D, VIP, weekend | 25 × 1.5 × 1.2 | 45 RON |
-| 3D, Cuplu, weekend | (25+10) × 1.8 × 1.2 | 75.6 RON |
+| Horror / Thriller | 18:00 | 23:59 |
+| Animație / Familie | 10:00 | 20:00 |
+| Comedie / Acțiune / SF | 10:00 | 23:00 |
+| Drama / Altele | 12:00 | 23:00 |
+
+**Ore de funcționare:**
+
+| Tier | Deschide | Ultimul film |
+|---|---|---|
+| Basic | 12:00 | 21:00 |
+| Standard | 10:00 | 22:30 |
+| Premium | 10:00 | 23:30 |
+
+**Buffer între filme:** durata filmului + 45 de minute (30 pentru reclame/trailers + 15 pentru pregătirea sălii).
+
+**Variație între cinematografe:** fiecare locație primește un offset de 0-75 minute calculat din ID-ul său, astfel că Cinema City Suceava și Cinema City Iași rulează același film la ore ușor diferite — exact cum e în realitate.
 
 ---
 
-## 6. Persistarea datelor
+## Rețeaua de cinematografe
 
-Toate datele sunt salvate în fișiere text în directorul `data/`:
+24 de locații în 7 regiuni geografice:
 
-| Fișier | Conținut |
+| Regiune | Orașe |
 |---|---|
-| `data/filme.txt` | Filmele, format pipe-separated |
-| `data/conturi.txt` | Conturile utilizatorilor |
-| `data/toate_rezervarile.txt` | Log complet al rezervărilor |
-| `data/istoric_<username>.txt` | Istoricul per utilizator |
-| `data/bilete/Bilet_*.txt` | Biletele generate |
+| Moldova | Suceava (2), Iași (2), Bacău (2), Piatra Neamț (1) |
+| Transilvania | Cluj-Napoca (2), Brașov (2), Sibiu (2) |
+| Muntenia | București (3), Ploiești (1) |
+| Oltenia | Craiova (2) |
+| Dobrogea | Constanța (2) |
+| Banat | Timișoara (2) |
+| Crișana | Oradea (1), Arad (1) |
+
+Când te loghezi, aplicația îți detectează automat orașul prin API-ul `ip-api.com` și îți arată cinematografele din orașul tău plus cele din cele mai apropiate 3 orașe din aceeași regiune. Dacă ești în Brașov nu îți apare Constanța.
 
 ---
 
-## 7. Build și rulare
+## Persistarea datelor
 
-### Qt (aplicație desktop)
-```bash
-# Linux / macOS
-mkdir build && cd build
-cmake .. && make
-./CinemaBookingSystem
-```
+| Fișier | Ce conține |
+|---|---|
+| `filme.txt` | Filmele, format pipe-separated (16 câmpuri) |
+| `conturi.txt` | Username, parolă, tip cont |
+| `toate_rezervarile.txt` | Log complet al tuturor rezervărilor |
+| `istoric_<user>.txt` | Istoricul per utilizator |
+| `ratings_<user>.txt` | Evaluările filmelor |
+| `preferinte_<user>.txt` | Tipul și poziția preferată de loc |
+| `bilete/Bilet_*.txt` | Biletele generate după fiecare rezervare |
+| `rezervare.ics` | Exportul în calendar (generat la cerere) |
 
-### Teste unitare (fără Qt)
+---
+
+## Teste unitare
+
+16 teste scrise manual în `tests/test_main.cpp`, fără biblioteci externe, acoperind Film, Sala, excepții, prețuri, Rezervare, FoodOrder, Data și getRegiune.
+
 ```bash
 g++ -std=c++20 -I include tests/test_main.cpp -o tests/run_tests
 ./tests/run_tests
@@ -201,11 +224,21 @@ g++ -std=c++20 -I include tests/test_main.cpp -o tests/run_tests
 
 ---
 
-## 8. Posibile îmbunătățiri
+## Build și rulare
 
-- **Export .ics** — adăugare rezervare în Google Calendar / Outlook
-- **Rating utilizatori** — notare filme după vizionare
-- **Prețuri dinamice** — variație în funcție de cât de plină e sala
-- **Notificări email** — trimitere automată a biletului
-- **Bază de date SQL** — înlocuirea fișierelor text cu SQLite
-- **API REST** — backend accesibil din aplicații mobile
+```bash
+mkdir build && cd build
+cmake .. && make
+./CinemaBookingSystem
+```
+
+Sau deschide `CinemaBookingSystem.sln` în Visual Studio 2022 cu Qt 6.7.3. Executabilul precompilat e disponibil în Releases.
+
+---
+
+## Posibile îmbunătățiri
+
+- O bază de date SQLite în loc de fișiere text — mai rapid și mai robust
+- Notificări email reale pentru confirmarea rezervării
+- Sistem de reduceri — card de fidelitate, reduceri studenți
+- Aplicație mobilă care să consume același backend
