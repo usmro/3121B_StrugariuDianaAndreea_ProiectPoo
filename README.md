@@ -45,7 +45,7 @@ CinemaBookingSystem/
 
 ## Rulare rapidă (executabil precompilat)
 
-Descarcă `CinemaLumiere-v1.0.zip` din **Releases**, dezarhivează și rulează `CinemaBookingSystem.exe`. Nu necesită instalarea Qt sau Visual Studio.
+Descarcă `Cinema Booking System-v1.1.zip` din **Releases**, dezarhivează și rulează `CinemaBookingSystem.exe`. Nu necesită instalarea Qt sau Visual Studio.
 
 ## Build pe Windows (Visual Studio 2022 + Qt 6.7.3)
 
