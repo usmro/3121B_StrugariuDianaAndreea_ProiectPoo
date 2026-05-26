@@ -1,4 +1,4 @@
-# Sistem de Rezervări Cinema — Documentație
+# Cinema Lumière — Documentație
 
 ## Ce am construit
 
@@ -235,6 +235,38 @@ cmake .. && make
 Sau deschide `CinemaBookingSystem.sln` în Visual Studio 2022 cu Qt 6.7.3. Executabilul precompilat e disponibil în Releases.
 
 ---
+
+
+## Versiunea Consolă
+
+Branch-ul `console` conține o implementare completă în terminal, fără Qt, care demonstrează că logica de business din `Cinema.h` și `CinemaModels.h` e complet independentă de interfața grafică.
+
+**Ce funcționează identic:**
+- Toate clasele (Film, Sala, Rezervare, RezervareOnline, ICinemaService)
+- Toate excepțiile custom
+- Sistemul de programări automat
+- Group booking și food ordering
+- Prețuri dinamice (weekend, tier, tip loc, 3D)
+- Evaluări utilizatori
+- Persistare date în fișiere
+
+**Hartă sală ASCII:**
+```
+  R 1 |  O  O  C  C  O  O  O  O  O  O |
+  R 2 |  O  O  O  O  O  O  O  O  O  O |
+  R 3 |  O  O  O  O  O  O  O  O  O  O |
+  R 4 |  O  O  O  O  O  O  O  O  O  O |
+  R 5 |  V  V  V  V  V  V  V  V  V  V |
+
+  Legenda: O=Standard  V=VIP  C=Cuplu  X=Ocupat  [*]=Selectat
+```
+
+**Compilare:**
+```bash
+git checkout console
+g++ -std=c++20 -I include src/main_console.cpp -o cinema
+./cinema
+```
 
 ## Posibile îmbunătățiri
 

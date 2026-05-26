@@ -1,4 +1,4 @@
-# Cinema Booking System
+# Cinema Lumière
 
 Sistem de rezervări de bilete la cinematograf cu interfață grafică Qt, realizat în C++.
 
@@ -45,7 +45,7 @@ CinemaBookingSystem/
 
 ## Rulare rapidă (executabil precompilat)
 
-Descarcă `CinemaBookingSystem-v1.0.zip` din **Releases**, dezarhivează și rulează `CinemaBookingSystem.exe`. Nu necesită instalarea Qt sau Visual Studio.
+Descarcă `CinemaLumiere-v1.0.zip` din **Releases**, dezarhivează și rulează `CinemaBookingSystem.exe`. Nu necesită instalarea Qt sau Visual Studio.
 
 ## Build pe Windows (Visual Studio 2022 + Qt 6.7.3)
 
@@ -83,6 +83,26 @@ Aplicația poate încărca automat posterele din [TMDB](https://www.themoviedb.o
 #define TMDB_API_KEY "cheia_ta_aici"
 ```
 4. Rebuild
+
+
+## Versiunea Consolă (fără Qt)
+
+Branch-ul `console` conține o versiune completă a aplicației care rulează în terminal, fără nicio dependență Qt.
+
+```bash
+git checkout console
+g++ -std=c++20 -I include src/main_console.cpp -o cinema
+./cinema
+```
+
+Funcționalități disponibile în versiunea consolă:
+- Autentificare și înregistrare utilizatori
+- Browse filme cu prețuri și rating
+- Rezervare completă cu group booking și food ordering
+- Hartă sală ASCII interactivă
+- Evaluări filme
+- Panou admin
+- Toate regulile de prețuri (weekend, tier, tip loc)
 
 ## Credențiale implicite
 

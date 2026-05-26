@@ -34,6 +34,8 @@
 #include <QJsonArray>
 #include <QToolTip>
 #include <QDesktopServices>
+#include <QSvgRenderer>
+#include <QBuffer>
 #include <QUrl>
 #include "Cinema.h"
 #include "config.h"
@@ -74,7 +76,7 @@ private:
 class MenuCard : public QFrame {
     Q_OBJECT
 public:
-    MenuCard(const QString& emoji,const QString& title,const QString& desc,bool gold=false,QWidget* parent=nullptr);
+    MenuCard(const QPixmap& icon,const QString& title,const QString& desc,bool gold=false,QWidget* parent=nullptr);
 signals:
     void clicked();
 protected:
