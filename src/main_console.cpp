@@ -9,7 +9,13 @@
 
 static Cinematograf cinema;
 
-void clearScreen(){ std::cout << "\033[2J\033[1;1H"; }
+void clearScreen(){
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+}
 
 void pauseMenu(){
     std::cout << "\n  Apasa Enter pentru a continua...";
@@ -20,14 +26,14 @@ void pauseMenu(){
 void printHeader(const std::string& titlu){
     clearScreen();
     std::cout << "\n";
-    std::cout << "  ╔══════════════════════════════════════════╗\n";
-    std::cout << "  ║          CINEMA BOOKING SYSTEM           ║\n";
-    std::cout << "  ╠══════════════════════════════════════════╣\n";
-    std::cout << "  ║  " << std::left << std::setw(41) << titlu << "║\n";
-    std::cout << "  ╚══════════════════════════════════════════╝\n\n";
+    std::cout << "  +------------------------------------------+\n";
+    std::cout << "  |          CINEMA BOOKING SYSTEM           |\n";
+    std::cout << "  +------------------------------------------+\n";
+    std::cout << "  | " << std::left << std::setw(41) << titlu << "|\n";
+    std::cout << "  +------------------------------------------+\n\n";
 }
 
-void printSeparator(){ std::cout << "  ────────────────────────────────────────────\n"; }
+void printSeparator(){ std::cout << "  ------------------------------------------\n"; }
 
 std::string inputStr(const std::string& prompt){
     std::string s;
