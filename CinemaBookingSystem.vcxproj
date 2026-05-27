@@ -17,7 +17,7 @@
     <ProjectGuid>{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}</ProjectGuid>
     <RootNamespace>CinemaBookingSystem</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <QtDir>D:\Qt\6.7.3\msvc2022_64</QtDir>
+    <QtDir>C:\Qt\6.7.3\msvc2022_64</QtDir>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
