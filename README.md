@@ -5,7 +5,7 @@ Sistem de rezervări de bilete la cinematograf cu interfață grafică Qt, reali
 ## Funcționalități
 
 - Autentificare și înregistrare utilizatori
-- Detecție automată a locației prin IP — afișează cinematografele din orașul tău
+- Detecție automată a locației prin IP
 - Rețea de 24 de cinematografe în toată România, organizate pe regiuni
 - Sistem de programări automat cu reguli de gen și ore realiste
 - Rezervare în grup (până la 8 locuri simultan)
@@ -43,9 +43,9 @@ CinemaBookingSystem/
 └── DOCUMENTATIE.md
 ```
 
-## Rulare rapidă (executabil precompilat)
+## Rulare rapidă (executabil precompilat Windows)
 
-Descarcă `CinemaLumiere-v1.0.zip` din **Releases**, dezarhivează și rulează `CinemaBookingSystem.exe`. Nu necesită instalarea Qt sau Visual Studio.
+Descarcă `CinemaLumiere-v1.1.zip` din **Releases**, dezarhivează și rulează `CinemaBookingSystem.exe`. Nu necesită instalarea Qt sau Visual Studio.
 
 ## Build pe Windows (Visual Studio 2022 + Qt 6.7.3)
 
@@ -57,13 +57,57 @@ Descarcă `CinemaLumiere-v1.0.zip` din **Releases**, dezarhivează și rulează 
 
 Qt-ul și DLL-urile necesare sunt copiate automat în folderul de output prin post-build event.
 
-## Build pe Linux (g++ / CMake)
+## Build pe Linux (Ubuntu)
 
+Pași de la zero pe Ubuntu proaspăt instalat:
+
+**1. Activează repository-urile universe și actualizează:**
 ```bash
-sudo apt install qt6-base-dev cmake build-essential libgl-dev
-cmake -B build && cmake --build build
-./build/CinemaBookingSystem
+sudo add-apt-repository universe
+sudo apt-get update
 ```
+
+**2. Instalează dependențele:**
+```bash
+sudo apt-get install -y \
+    qt6-base-dev \
+    qt6-base-dev-tools \
+    libqt6svg6-dev \
+    cmake \
+    build-essential \
+    ninja-build \
+    libgl-dev \
+    libglu1-mesa-dev \
+    libxkbcommon-dev \
+    libxkbcommon-x11-0 \
+    libxcb-cursor0 \
+    libxcb-icccm4 \
+    libxcb-image0 \
+    libxcb-keysyms1 \
+    libxcb-render-util0 \
+    libxcb-shape0 \
+    libxcb-xinerama0 \
+    libfontconfig1 \
+    libfreetype6 \
+    fonts-noto-color-emoji
+```
+
+**3. Clonează și compilează:**
+```bash
+git clone https://github.com/usmro/3121B_StrugariuDianaAndreea_ProiectPoo.git
+cd 3121B_StrugariuDianaAndreea_ProiectPoo
+cmake -B build && cmake --build build
+```
+
+**4. Rulează:**
+```bash
+cd build
+./CinemaBookingSystem
+```
+
+> **Notă:** `fonts-noto-color-emoji` este necesar pentru afișarea corectă a emoji-urilor (stele, food, badge-uri). Fără el unele simboluri apar ca dreptunghiuri goale.
+
+> **Notă:** Dacă detecția automată a locației nu funcționează (rețele de campus pot bloca traficul HTTP), aplicația folosește Suceava ca locație implicită și funcționează normal.
 
 ## Teste unitare (fără Qt, fără biblioteci externe)
 
@@ -71,19 +115,6 @@ cmake -B build && cmake --build build
 g++ -std=c++20 -I include tests/test_main.cpp -o tests/run_tests
 ./tests/run_tests
 ```
-
-## Postere filme (opțional)
-
-Aplicația poate încărca automat posterele din [TMDB](https://www.themoviedb.org/):
-
-1. Creează cont gratuit pe themoviedb.org
-2. **Settings → API** → generează cheie API (v3)
-3. În `include/config.h` înlocuiește:
-```cpp
-#define TMDB_API_KEY "cheia_ta_aici"
-```
-4. Rebuild
-
 
 ## Versiunea Consolă (fără Qt)
 
@@ -103,6 +134,18 @@ Funcționalități disponibile în versiunea consolă:
 - Evaluări filme
 - Panou admin
 - Toate regulile de prețuri (weekend, tier, tip loc)
+
+## Postere filme (opțional)
+
+Aplicația poate încărca automat posterele din [TMDB](https://www.themoviedb.org/):
+
+1. Creează cont gratuit pe themoviedb.org
+2. **Settings → API** → generează cheie API (v3)
+3. În `include/config.h` înlocuiește:
+```cpp
+#define TMDB_API_KEY "cheia_ta_aici"
+```
+4. Rebuild
 
 ## Credențiale implicite
 

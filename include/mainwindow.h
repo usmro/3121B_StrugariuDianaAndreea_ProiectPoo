@@ -68,6 +68,17 @@ private:
     double pretBaza_ = 0.0;
     PreferintaLoc preferinta_;
     static constexpr int S=52,G=10,ML=72,MT=120;
+    int seatSize() const {
+        if(!sala) return S;
+        int availW = width() - ML - 24;
+        int availH = height() - MT - 28;
+        int byW = sala->getColoane()>0 ? (availW - sala->getColoane()*G) / sala->getColoane() : S;
+        int byH = sala->getRanduri()>0 ? (availH - sala->getRanduri()*G) / sala->getRanduri() : S;
+        return qMax(28, qMin(S, qMin(byW, byH)));
+    }
+    int seatGap()  const { return qMax(4, G * seatSize() / S); }
+    int marginL()  const { return ML; }
+    int marginT()  const { return qMax(80, MT * seatSize() / S); }
     QRect              seatRect(int r,int c) const;
     std::pair<int,int> seatAt(QPoint p)     const;
 };
